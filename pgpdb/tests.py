@@ -203,6 +203,61 @@ GeykHHGfctbPAwE/06+sspYamO7XjhmPcbdXd+fX9w==
 -----END PGP PUBLIC KEY BLOCK-----
 """
 
+GPG_CAROL_KEY = """
+Old: Public Key Packet(tag 6)(51 bytes)
+	Ver 4 - new
+	Public key creation time - Fri Oct  9 14:41:17 +07 2020
+	Pub alg - EdDSA Edwards-curve Digital Signature Algorithm(pub 22)
+	Unknown public key(pub 22)
+Old: User ID Packet(tag 13)(36 bytes)
+	User ID - carol (test key) <carol@example.com>
+Old: Signature Packet(tag 2)(144 bytes)
+	Ver 4 - new
+	Sig type - Positive certification of a User ID and Public Key packet(0x13).
+	Pub alg - EdDSA Edwards-curve Digital Signature Algorithm(pub 22)
+	Hash alg - SHA256(hash 8)
+	Hashed Sub: issuer fingerprint(sub 33)(21 bytes)
+	 v4 -	Fingerprint - 5c b2 75 d4 49 c0 9c 30 28 fa ff 8d 7f a0 29 cf 20 39 d7 60
+	Hashed Sub: signature creation time(sub 2)(4 bytes)
+		Time - Fri Oct  9 14:41:17 +07 2020
+	Hashed Sub: key flags(sub 27)(1 bytes)
+		Flag - This key may be used to certify other keys
+		Flag - This key may be used to sign data
+	Hashed Sub: preferred symmetric algorithms(sub 11)(4 bytes)
+		Sym alg - AES with 256-bit key(sym 9)
+		Sym alg - AES with 192-bit key(sym 8)
+		Sym alg - AES with 128-bit key(sym 7)
+		Sym alg - Triple-DES(sym 2)
+	Hashed Sub: preferred hash algorithms(sub 21)(5 bytes)
+		Hash alg - SHA512(hash 10)
+		Hash alg - SHA384(hash 9)
+		Hash alg - SHA256(hash 8)
+		Hash alg - SHA224(hash 11)
+		Hash alg - SHA1(hash 2)
+	Hashed Sub: preferred compression algorithms(sub 22)(3 bytes)
+		Comp alg - ZLIB <RFC1950>(comp 2)
+		Comp alg - BZip2(comp 3)
+		Comp alg - ZIP <RFC1951>(comp 1)
+	Hashed Sub: features(sub 30)(1 bytes)
+		Flag - Modification detection (packets 18 and 19)
+	Hashed Sub: key server preferences(sub 23)(1 bytes)
+		Flag - No-modify
+	Sub: issuer key ID(sub 16)(8 bytes)
+		Key ID - 0x7FA029CF2039D760
+	Hash left 2 bytes - ab 5a
+	Unknown signature(pub 22)
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mDMEX4AUHRYJKwYBBAHaRw8BAQdAbzUUIywuir/IaG9JLGmMHKUwVhqiNgskyVXA
+fVnpoHa0JGNhcm9sICh0ZXN0IGtleSkgPGNhcm9sQGV4YW1wbGUuY29tPoiQBBMW
+CAA4FiEEXLJ11EnAnDAo+v+Nf6ApzyA512AFAl+AFB0CGwMFCwkIBwIGFQoJCAsC
+BBYCAwECHgECF4AACgkQf6ApzyA512CrWgEAn8UlvGHQp+RLzNuXYU7E1ABdcbRL
+nuXsvjXmL1k4doYBALSpvNzU6JavWxF79U41S3vOzYBi2x6rZCJ9FZHhyO0A
+=jMet
+-----END PGP PUBLIC KEY BLOCK-----
+"""
+
 PGPDB_ALICE_KEY = '''-----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: django-pgpdb {0}
 
@@ -321,6 +376,17 @@ r6yylhqY7teOGY9xt1d359f3
 =Nkr1
 -----END PGP PUBLIC KEY BLOCK-----'''.format(pgpdb.__version__)
 
+PGPDB_CAROL_KEY = '''-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: django-pgpdb {0}
+
+mDMEX4AUHRYJKwYBBAHaRw8BAQdAbzUUIywuir/IaG9JLGmMHKUwVhqiNgskyVXA
+fVnpoHa0JGNhcm9sICh0ZXN0IGtleSkgPGNhcm9sQGV4YW1wbGUuY29tPoiQBBMW
+CAA4FiEEXLJ11EnAnDAo+v+Nf6ApzyA512AFAl+AFB0CGwMFCwkIBwIGFQoJCAsC
+BBYCAwECHgECF4AACgkQf6ApzyA512CrWgEAn8UlvGHQp+RLzNuXYU7E1ABdcbRL
+nuXsvjXmL1k4doYBALSpvNzU6JavWxF79U41S3vOzYBi2x6rZCJ9FZHhyO0A
+=jMet
+-----END PGP PUBLIC KEY BLOCK-----'''.format(pgpdb.__version__)
+
 MACHINE_READABLE_INDEX1 = '''info:1:1
 pub:d5d7da71c354960e:1:2048:1403441448::
 uid:alice (test key) <alice@example.com>:1403441448::'''
@@ -334,9 +400,11 @@ uid:bob (test key) <bob@example.com>:1403441743::'''
 class PGPKeyModelTest(TestCase):
     def setUp(self):
         self.ALICE = models.PGPKeyModel.objects.save_to_storage(None, GPG_ALICE_KEY)
+        self.CAROL = models.PGPKeyModel.objects.save_to_storage(None, GPG_CAROL_KEY)
 
     def tearDown(self):
         self.ALICE.delete()
+        self.CAROL.delete()
 
     def test_save_to_storage(self):
         self.BOB = models.PGPKeyModel.objects.save_to_storage(None, GPG_BOB_KEY)
@@ -491,6 +559,35 @@ class PGPKeyModelTest(TestCase):
         HASH_MAP = models.PGPSignatureModel.HASH_MAP
         sha1 = HASH_MAP[models.PGPSignatureModel.SHA1]
         self.assertEqual(hash_str, str(sha1))
+
+    def test_eddsa_algorithm_str(self):
+        first = self.CAROL.public_keys.first()
+        algorithm_str = first.algorithm_str()
+        PKA_MAP = models.PGPPublicKeyModel.PKA_MAP
+        eddsa_enc_sign = PKA_MAP[models.PGPPublicKeyModel.EDDSA]
+        self.assertEqual(algorithm_str, str(eddsa_enc_sign))
+
+    def test_simple_eddsa_algorithm_str(self):
+        first = self.CAROL.public_keys.first()
+        simple_str = first.simple_algorithm_str()
+        SIMPLE_PKA_MAP = models.PGPPublicKeyModel.SIMPLE_PKA_MAP
+        simple_eddsa = SIMPLE_PKA_MAP[models.PGPPublicKeyModel.EDDSA]
+        self.assertEqual(simple_str, str(simple_eddsa))
+
+    def test_pka_eddsa_str(self):
+        first = self.CAROL.signatures.first()
+        pka_str = first.pka_str()
+        PKA_MAP = models.PGPSignatureModel.PKA_MAP
+        eddsa_enc_sign = PKA_MAP[models.PGPSignatureModel.EDDSA]
+        self.assertEqual(pka_str, str(eddsa_enc_sign))
+
+    def test_simple_pka_eddsa_str(self):
+        first = self.CAROL.signatures.first()
+        simple_pka_str = first.simple_pka_str()
+        SIMPLE_PKA_MAP = models.PGPSignatureModel.SIMPLE_PKA_MAP
+        simple_eddsa = SIMPLE_PKA_MAP[models.PGPSignatureModel.EDDSA]
+        self.assertEqual(simple_pka_str, str(simple_eddsa))
+
 
 class PGPDBViewTest(TestCase):
     def setUp(self):
