@@ -187,6 +187,7 @@ class PGPPublicKeyModel(PGPPacketModel):
     ECDSA = 19
     ELGAMAL_ENC_SIGN = 20
     DH = 21
+    EDDSA = 22
 
     PKA_MAP = {
         UNKNOWN: _('Unknown'),
@@ -199,6 +200,7 @@ class PGPPublicKeyModel(PGPPacketModel):
         ECDSA: _('ECDSA public key algorithm'),
         ELGAMAL_ENC_SIGN: _('formerly Elgamal Encrypt or Sign'),
         DH: _('Diffie-Hellman'),
+        EDDSA: _('EdDSA Edwards-curve Digital Signature Algorithm'),
     }
 
     SIMPLE_PKA_MAP = {
@@ -212,6 +214,7 @@ class PGPPublicKeyModel(PGPPacketModel):
         ECDSA: _('ECDSA'),
         ELGAMAL_ENC_SIGN: _('Elgamal'),
         DH: _('DH'),
+        EDDSA: _('EdDSA'),
     }
 
     key = models.ForeignKey('PGPKeyModel', related_name='public_keys')
@@ -229,6 +232,7 @@ class PGPPublicKeyModel(PGPPacketModel):
         (ECDSA, PKA_MAP[ECDSA]),
         (ELGAMAL_ENC_SIGN, PKA_MAP[ELGAMAL_ENC_SIGN]),
         (DH, PKA_MAP[DH]),
+        (EDDSA, PKA_MAP[EDDSA]),
     ))
     bits = models.IntegerField()
     fingerprint = models.CharField(max_length=40)
@@ -296,6 +300,7 @@ class PGPSignatureModel(PGPPacketModel):
     ECDSA = PGPPublicKeyModel.ECDSA
     ELGAMAL_ENC_SIGN = PGPPublicKeyModel.ELGAMAL_ENC_SIGN
     DH = PGPPublicKeyModel.DH
+    EDDSA = PGPPublicKeyModel.EDDSA
 
     PKA_MAP = PGPPublicKeyModel.PKA_MAP
     SIMPLE_PKA_MAP = PGPPublicKeyModel.SIMPLE_PKA_MAP
@@ -357,6 +362,7 @@ class PGPSignatureModel(PGPPacketModel):
         (ECDSA, PKA_MAP[ECDSA]),
         (ELGAMAL_ENC_SIGN, PKA_MAP[ELGAMAL_ENC_SIGN]),
         (DH, PKA_MAP[DH]),
+        (EDDSA, PKA_MAP[EDDSA]),
     ))
     hash = models.IntegerField(default=0, choices=(
         (UNKNOWN, HASH_MAP[UNKNOWN]),
