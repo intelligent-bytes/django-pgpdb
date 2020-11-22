@@ -20,11 +20,18 @@ def main():
                         os.path.join(BASE_DIR, 'templates'),
                     ],
                     'APP_DIRS': True,
+                    'OPTIONS': {
+                        'context_processors': [
+                            'django.contrib.auth.context_processors.auth',
+                            'django.contrib.messages.context_processors.messages',
+                        ],
+                    },
                 },
             ],
             INSTALLED_APPS=[
                 'django.contrib.auth',
                 'django.contrib.contenttypes',
+                'django.contrib.messages',
                 'django.contrib.admin',
                 'django.contrib.sessions',
                 'bootstrapform',
@@ -47,6 +54,11 @@ def main():
             ROOT_URLCONF='pgpdb.urls',
             DEBUG=True,
             TEMPLATE_DEBUG=True,
+            MIDDLEWARE=[
+                'django.contrib.sessions.middleware.SessionMiddleware',
+                'django.contrib.auth.middleware.AuthenticationMiddleware',
+                'django.contrib.messages.middleware.MessageMiddleware',
+            ],
         )
 
         if django.VERSION[:2] >= (1, 7):
