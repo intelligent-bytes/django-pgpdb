@@ -131,7 +131,7 @@ def _pgp_key_model_upload_to(instance, filename):
 
 class PGPKeyModel(models.Model):
     uid = models.UUIDField()
-    user = models.ForeignKey(User, blank=True, null=True)
+    user = models.ForeignKey(User, blank=True, null=True, on_delete=models.CASCADE)
     file = models.FileField(upload_to=_pgp_key_model_upload_to,
         storage=default_storage)
     crc24 = models.CharField(max_length=4)  # =([A-Za-z0-9+/]{4})
@@ -217,7 +217,7 @@ class PGPPublicKeyModel(PGPPacketModel):
         EDDSA: _('EdDSA'),
     }
 
-    key = models.ForeignKey('PGPKeyModel', related_name='public_keys')
+    key = models.ForeignKey('PGPKeyModel', related_name='public_keys', on_delete=models.CASCADE)
     is_sub = models.BooleanField(default=False)
     creation_time = models.DateTimeField()
     expiration_time = models.DateTimeField(null=True)
@@ -249,7 +249,7 @@ class PGPPublicKeyModel(PGPPacketModel):
 
 # Tag 13
 class PGPUserIDModel(PGPPacketModel):
-    key = models.ForeignKey('PGPKeyModel', related_name='userids')
+    key = models.ForeignKey('PGPKeyModel', related_name='userids', null=True, on_delete=models.SET_NULL)
     userid = models.TextField()
 
     def is_userid(self):
@@ -332,9 +332,9 @@ class PGPSignatureModel(PGPPacketModel):
         SHA224: _('SHA224'),
     }
 
-    key = models.ForeignKey('PGPKeyModel', related_name='signatures')
-    pkey = models.ForeignKey('PGPPublicKeyModel', related_name='signatures')
-    userid = models.ForeignKey('PGPUserIDModel', related_name='signatures')
+    key = models.ForeignKey('PGPKeyModel', related_name='signatures', on_delete=models.CASCADE)
+    pkey = models.ForeignKey('PGPPublicKeyModel', related_name='signatures', on_delete=models.CASCADE)
+    userid = models.ForeignKey('PGPUserIDModel', related_name='signatures', on_delete=models.CASCADE)
     type = models.IntegerField(default=-1, choices=(
         (SIG_UNKNOWN, SIG_MAP[SIG_UNKNOWN]),
         (BINARY, SIG_MAP[BINARY]),
