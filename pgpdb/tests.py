@@ -1,7 +1,6 @@
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import TestCase
-from django.test.client import Client, RequestFactory
-from django.utils.translation import ugettext_lazy as _
+from django.test.client import Client
 
 from . import models
 
