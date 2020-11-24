@@ -73,8 +73,8 @@ class PGPKeyModelManager(models.Manager):
                         bits = len(bin(packet.prime)[2:])
                     elif algo in (16, 20):
                         bits = len(bin(packet.prime)[2:])
-                    fingerprint = packet.fingerprint.lower()
-                    keyid = packet.key_id.lower()
+                    fingerprint = packet.fingerprint.lower().decode('ascii')
+                    keyid = packet.key_id.lower().decode('ascii')
                     last_pubkey = PGPPublicKeyModel.objects.create(
                         index=index,
                         key=instance,
@@ -98,7 +98,7 @@ class PGPKeyModelManager(models.Manager):
                     expir = None
                     if packet.expiration_time is not None:
                         expir = make_aware(packet.expiration_time, utc)
-                    keyid = packet.key_id.lower()
+                    keyid = packet.key_id.lower().decode('ascii')
                     PGPSignatureModel.objects.create(
                         index=index,
                         key=instance,
