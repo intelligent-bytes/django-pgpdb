@@ -1,76 +1,79 @@
+from django.contrib.admin.sites import AdminSite
+from django.contrib.auth.models import User
 from django.urls import reverse
 from django.test import TestCase
 from django.test.client import Client
 
-from . import models
+from pgpdb import models
+from pgpdb.admin import PGPKeyModelAdmin
 
 import pgpdb
 
 GPG_ALICE_KEY = """
 Old: Public Key Packet(tag 6)(269 bytes)
-	Ver 4 - new
-	Public key creation time - Sun Jun 22 21:50:48 JST 2014
-	Pub alg - RSA Encrypt or Sign(pub 1)
-	RSA n(2048 bits) - ...
-	RSA e(17 bits) - ...
+    Ver 4 - new
+    Public key creation time - Sun Jun 22 21:50:48 JST 2014
+    Pub alg - RSA Encrypt or Sign(pub 1)
+    RSA n(2048 bits) - ...
+    RSA e(17 bits) - ...
 Old: User ID Packet(tag 13)(36 bytes)
-	User ID - alice (test key) <alice@example.com>
+    User ID - alice (test key) <alice@example.com>
 Old: Signature Packet(tag 2)(312 bytes)
-	Ver 4 - new
-	Sig type - Positive certification of a User ID and Public Key packet(0x13).
-	Pub alg - RSA Encrypt or Sign(pub 1)
-	Hash alg - SHA1(hash 2)
-	Hashed Sub: signature creation time(sub 2)(4 bytes)
-		Time - Sun Jun 22 21:50:48 JST 2014
-	Hashed Sub: key flags(sub 27)(1 bytes)
-		Flag - This key may be used to certify other keys
-		Flag - This key may be used to sign data
-	Hashed Sub: preferred symmetric algorithms(sub 11)(5 bytes)
-		Sym alg - AES with 256-bit key(sym 9)
-		Sym alg - AES with 192-bit key(sym 8)
-		Sym alg - AES with 128-bit key(sym 7)
-		Sym alg - CAST5(sym 3)
-		Sym alg - Triple-DES(sym 2)
-	Hashed Sub: preferred hash algorithms(sub 21)(5 bytes)
-		Hash alg - SHA256(hash 8)
-		Hash alg - SHA1(hash 2)
-		Hash alg - SHA384(hash 9)
-		Hash alg - SHA512(hash 10)
-		Hash alg - SHA224(hash 11)
-	Hashed Sub: preferred compression algorithms(sub 22)(3 bytes)
-		Comp alg - ZLIB <RFC1950>(comp 2)
-		Comp alg - BZip2(comp 3)
-		Comp alg - ZIP <RFC1951>(comp 1)
-	Hashed Sub: features(sub 30)(1 bytes)
-		Flag - Modification detection (packets 18 and 19)
-	Hashed Sub: key server preferences(sub 23)(1 bytes)
-		Flag - No-modify
-	Sub: issuer key ID(sub 16)(8 bytes)
-		Key ID - 0xD5D7DA71C354960E
-	Hash left 2 bytes - 04 5e 
-	RSA m^d mod n(2047 bits) - ...
-		-> PKCS-1
+    Ver 4 - new
+    Sig type - Positive certification of a User ID and Public Key packet(0x13).
+    Pub alg - RSA Encrypt or Sign(pub 1)
+    Hash alg - SHA1(hash 2)
+    Hashed Sub: signature creation time(sub 2)(4 bytes)
+        Time - Sun Jun 22 21:50:48 JST 2014
+    Hashed Sub: key flags(sub 27)(1 bytes)
+        Flag - This key may be used to certify other keys
+        Flag - This key may be used to sign data
+    Hashed Sub: preferred symmetric algorithms(sub 11)(5 bytes)
+        Sym alg - AES with 256-bit key(sym 9)
+        Sym alg - AES with 192-bit key(sym 8)
+        Sym alg - AES with 128-bit key(sym 7)
+        Sym alg - CAST5(sym 3)
+        Sym alg - Triple-DES(sym 2)
+    Hashed Sub: preferred hash algorithms(sub 21)(5 bytes)
+        Hash alg - SHA256(hash 8)
+        Hash alg - SHA1(hash 2)
+        Hash alg - SHA384(hash 9)
+        Hash alg - SHA512(hash 10)
+        Hash alg - SHA224(hash 11)
+    Hashed Sub: preferred compression algorithms(sub 22)(3 bytes)
+        Comp alg - ZLIB <RFC1950>(comp 2)
+        Comp alg - BZip2(comp 3)
+        Comp alg - ZIP <RFC1951>(comp 1)
+    Hashed Sub: features(sub 30)(1 bytes)
+        Flag - Modification detection (packets 18 and 19)
+    Hashed Sub: key server preferences(sub 23)(1 bytes)
+        Flag - No-modify
+    Sub: issuer key ID(sub 16)(8 bytes)
+        Key ID - 0xD5D7DA71C354960E
+    Hash left 2 bytes - 04 5e
+    RSA m^d mod n(2047 bits) - ...
+        -> PKCS-1
 Old: Public Subkey Packet(tag 14)(269 bytes)
-	Ver 4 - new
-	Public key creation time - Sun Jun 22 21:50:48 JST 2014
-	Pub alg - RSA Encrypt or Sign(pub 1)
-	RSA n(2048 bits) - ...
-	RSA e(17 bits) - ...
+    Ver 4 - new
+    Public key creation time - Sun Jun 22 21:50:48 JST 2014
+    Pub alg - RSA Encrypt or Sign(pub 1)
+    RSA n(2048 bits) - ...
+    RSA e(17 bits) - ...
 Old: Signature Packet(tag 2)(287 bytes)
-	Ver 4 - new
-	Sig type - Subkey Binding Signature(0x18).
-	Pub alg - RSA Encrypt or Sign(pub 1)
-	Hash alg - SHA1(hash 2)
-	Hashed Sub: signature creation time(sub 2)(4 bytes)
-		Time - Sun Jun 22 21:50:48 JST 2014
-	Hashed Sub: key flags(sub 27)(1 bytes)
-		Flag - This key may be used to encrypt communications
-		Flag - This key may be used to encrypt storage
-	Sub: issuer key ID(sub 16)(8 bytes)
-		Key ID - 0xD5D7DA71C354960E
-	Hash left 2 bytes - 9a eb 
-	RSA m^d mod n(2047 bits) - ...
-		-> PKCS-1
+    Ver 4 - new
+    Sig type - Subkey Binding Signature(0x18).
+    Pub alg - RSA Encrypt or Sign(pub 1)
+    Hash alg - SHA1(hash 2)
+    Hashed Sub: signature creation time(sub 2)(4 bytes)
+        Time - Sun Jun 22 21:50:48 JST 2014
+    Hashed Sub: key flags(sub 27)(1 bytes)
+        Flag - This key may be used to encrypt communications
+        Flag - This key may be used to encrypt storage
+    Sub: issuer key ID(sub 16)(8 bytes)
+        Key ID - 0xD5D7DA71C354960E
+    Hash left 2 bytes - 9a eb
+    RSA m^d mod n(2047 bits) - ...
+        -> PKCS-1
 
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1
@@ -106,69 +109,69 @@ hHtoB2/2gM/blPn5EPrIht6Kh9njBFYVk+OrV96NpJl08lM=
 
 GPG_BOB_KEY = """
 Old: Public Key Packet(tag 6)(269 bytes)
-	Ver 4 - new
-	Public key creation time - Sun Jun 22 21:55:43 JST 2014
-	Pub alg - RSA Encrypt or Sign(pub 1)
-	RSA n(2048 bits) - ...
-	RSA e(17 bits) - ...
+    Ver 4 - new
+    Public key creation time - Sun Jun 22 21:55:43 JST 2014
+    Pub alg - RSA Encrypt or Sign(pub 1)
+    RSA n(2048 bits) - ...
+    RSA e(17 bits) - ...
 Old: User ID Packet(tag 13)(32 bytes)
-	User ID - bob (test key) <bob@example.com>
+    User ID - bob (test key) <bob@example.com>
 Old: Signature Packet(tag 2)(312 bytes)
-	Ver 4 - new
-	Sig type - Positive certification of a User ID and Public Key packet(0x13).
-	Pub alg - RSA Encrypt or Sign(pub 1)
-	Hash alg - SHA1(hash 2)
-	Hashed Sub: signature creation time(sub 2)(4 bytes)
-		Time - Sun Jun 22 21:55:43 JST 2014
-	Hashed Sub: key flags(sub 27)(1 bytes)
-		Flag - This key may be used to certify other keys
-		Flag - This key may be used to sign data
-	Hashed Sub: preferred symmetric algorithms(sub 11)(5 bytes)
-		Sym alg - AES with 256-bit key(sym 9)
-		Sym alg - AES with 192-bit key(sym 8)
-		Sym alg - AES with 128-bit key(sym 7)
-		Sym alg - CAST5(sym 3)
-		Sym alg - Triple-DES(sym 2)
-	Hashed Sub: preferred hash algorithms(sub 21)(5 bytes)
-		Hash alg - SHA256(hash 8)
-		Hash alg - SHA1(hash 2)
-		Hash alg - SHA384(hash 9)
-		Hash alg - SHA512(hash 10)
-		Hash alg - SHA224(hash 11)
-	Hashed Sub: preferred compression algorithms(sub 22)(3 bytes)
-		Comp alg - ZLIB <RFC1950>(comp 2)
-		Comp alg - BZip2(comp 3)
-		Comp alg - ZIP <RFC1951>(comp 1)
-	Hashed Sub: features(sub 30)(1 bytes)
-		Flag - Modification detection (packets 18 and 19)
-	Hashed Sub: key server preferences(sub 23)(1 bytes)
-		Flag - No-modify
-	Sub: issuer key ID(sub 16)(8 bytes)
-		Key ID - 0x3C8F7607CA580F9E
-	Hash left 2 bytes - 5e 70 
-	RSA m^d mod n(2048 bits) - ...
-		-> PKCS-1
+    Ver 4 - new
+    Sig type - Positive certification of a User ID and Public Key packet(0x13).
+    Pub alg - RSA Encrypt or Sign(pub 1)
+    Hash alg - SHA1(hash 2)
+    Hashed Sub: signature creation time(sub 2)(4 bytes)
+        Time - Sun Jun 22 21:55:43 JST 2014
+    Hashed Sub: key flags(sub 27)(1 bytes)
+        Flag - This key may be used to certify other keys
+        Flag - This key may be used to sign data
+    Hashed Sub: preferred symmetric algorithms(sub 11)(5 bytes)
+        Sym alg - AES with 256-bit key(sym 9)
+        Sym alg - AES with 192-bit key(sym 8)
+        Sym alg - AES with 128-bit key(sym 7)
+        Sym alg - CAST5(sym 3)
+        Sym alg - Triple-DES(sym 2)
+    Hashed Sub: preferred hash algorithms(sub 21)(5 bytes)
+        Hash alg - SHA256(hash 8)
+        Hash alg - SHA1(hash 2)
+        Hash alg - SHA384(hash 9)
+        Hash alg - SHA512(hash 10)
+        Hash alg - SHA224(hash 11)
+    Hashed Sub: preferred compression algorithms(sub 22)(3 bytes)
+        Comp alg - ZLIB <RFC1950>(comp 2)
+        Comp alg - BZip2(comp 3)
+        Comp alg - ZIP <RFC1951>(comp 1)
+    Hashed Sub: features(sub 30)(1 bytes)
+        Flag - Modification detection (packets 18 and 19)
+    Hashed Sub: key server preferences(sub 23)(1 bytes)
+        Flag - No-modify
+    Sub: issuer key ID(sub 16)(8 bytes)
+        Key ID - 0x3C8F7607CA580F9E
+    Hash left 2 bytes - 5e 70
+    RSA m^d mod n(2048 bits) - ...
+        -> PKCS-1
 Old: Public Subkey Packet(tag 14)(269 bytes)
-	Ver 4 - new
-	Public key creation time - Sun Jun 22 21:55:43 JST 2014
-	Pub alg - RSA Encrypt or Sign(pub 1)
-	RSA n(2048 bits) - ...
-	RSA e(17 bits) - ...
+    Ver 4 - new
+    Public key creation time - Sun Jun 22 21:55:43 JST 2014
+    Pub alg - RSA Encrypt or Sign(pub 1)
+    RSA n(2048 bits) - ...
+    RSA e(17 bits) - ...
 Old: Signature Packet(tag 2)(287 bytes)
-	Ver 4 - new
-	Sig type - Subkey Binding Signature(0x18).
-	Pub alg - RSA Encrypt or Sign(pub 1)
-	Hash alg - SHA1(hash 2)
-	Hashed Sub: signature creation time(sub 2)(4 bytes)
-		Time - Sun Jun 22 21:55:43 JST 2014
-	Hashed Sub: key flags(sub 27)(1 bytes)
-		Flag - This key may be used to encrypt communications
-		Flag - This key may be used to encrypt storage
-	Sub: issuer key ID(sub 16)(8 bytes)
-		Key ID - 0x3C8F7607CA580F9E
-	Hash left 2 bytes - a8 60 
-	RSA m^d mod n(2046 bits) - ...
-		-> PKCS-1
+    Ver 4 - new
+    Sig type - Subkey Binding Signature(0x18).
+    Pub alg - RSA Encrypt or Sign(pub 1)
+    Hash alg - SHA1(hash 2)
+    Hashed Sub: signature creation time(sub 2)(4 bytes)
+        Time - Sun Jun 22 21:55:43 JST 2014
+    Hashed Sub: key flags(sub 27)(1 bytes)
+        Flag - This key may be used to encrypt communications
+        Flag - This key may be used to encrypt storage
+    Sub: issuer key ID(sub 16)(8 bytes)
+        Key ID - 0x3C8F7607CA580F9E
+    Hash left 2 bytes - a8 60
+    RSA m^d mod n(2046 bits) - ...
+        -> PKCS-1
 
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 Version: GnuPG v1
@@ -204,47 +207,47 @@ GeykHHGfctbPAwE/06+sspYamO7XjhmPcbdXd+fX9w==
 
 GPG_CAROL_KEY = """
 Old: Public Key Packet(tag 6)(51 bytes)
-	Ver 4 - new
-	Public key creation time - Fri Oct  9 14:41:17 +07 2020
-	Pub alg - EdDSA Edwards-curve Digital Signature Algorithm(pub 22)
-	Unknown public key(pub 22)
+    Ver 4 - new
+    Public key creation time - Fri Oct  9 14:41:17 +07 2020
+    Pub alg - EdDSA Edwards-curve Digital Signature Algorithm(pub 22)
+    Unknown public key(pub 22)
 Old: User ID Packet(tag 13)(36 bytes)
-	User ID - carol (test key) <carol@example.com>
+    User ID - carol (test key) <carol@example.com>
 Old: Signature Packet(tag 2)(144 bytes)
-	Ver 4 - new
-	Sig type - Positive certification of a User ID and Public Key packet(0x13).
-	Pub alg - EdDSA Edwards-curve Digital Signature Algorithm(pub 22)
-	Hash alg - SHA256(hash 8)
-	Hashed Sub: issuer fingerprint(sub 33)(21 bytes)
-	 v4 -	Fingerprint - 5c b2 75 d4 49 c0 9c 30 28 fa ff 8d 7f a0 29 cf 20 39 d7 60
-	Hashed Sub: signature creation time(sub 2)(4 bytes)
-		Time - Fri Oct  9 14:41:17 +07 2020
-	Hashed Sub: key flags(sub 27)(1 bytes)
-		Flag - This key may be used to certify other keys
-		Flag - This key may be used to sign data
-	Hashed Sub: preferred symmetric algorithms(sub 11)(4 bytes)
-		Sym alg - AES with 256-bit key(sym 9)
-		Sym alg - AES with 192-bit key(sym 8)
-		Sym alg - AES with 128-bit key(sym 7)
-		Sym alg - Triple-DES(sym 2)
-	Hashed Sub: preferred hash algorithms(sub 21)(5 bytes)
-		Hash alg - SHA512(hash 10)
-		Hash alg - SHA384(hash 9)
-		Hash alg - SHA256(hash 8)
-		Hash alg - SHA224(hash 11)
-		Hash alg - SHA1(hash 2)
-	Hashed Sub: preferred compression algorithms(sub 22)(3 bytes)
-		Comp alg - ZLIB <RFC1950>(comp 2)
-		Comp alg - BZip2(comp 3)
-		Comp alg - ZIP <RFC1951>(comp 1)
-	Hashed Sub: features(sub 30)(1 bytes)
-		Flag - Modification detection (packets 18 and 19)
-	Hashed Sub: key server preferences(sub 23)(1 bytes)
-		Flag - No-modify
-	Sub: issuer key ID(sub 16)(8 bytes)
-		Key ID - 0x7FA029CF2039D760
-	Hash left 2 bytes - ab 5a
-	Unknown signature(pub 22)
+    Ver 4 - new
+    Sig type - Positive certification of a User ID and Public Key packet(0x13).
+    Pub alg - EdDSA Edwards-curve Digital Signature Algorithm(pub 22)
+    Hash alg - SHA256(hash 8)
+    Hashed Sub: issuer fingerprint(sub 33)(21 bytes)
+     v4 -    Fingerprint - 5c b2 75 d4 49 c0 9c 30 28 fa ff 8d 7f a0 29 cf 20 39 d7 60
+    Hashed Sub: signature creation time(sub 2)(4 bytes)
+        Time - Fri Oct  9 14:41:17 +07 2020
+    Hashed Sub: key flags(sub 27)(1 bytes)
+        Flag - This key may be used to certify other keys
+        Flag - This key may be used to sign data
+    Hashed Sub: preferred symmetric algorithms(sub 11)(4 bytes)
+        Sym alg - AES with 256-bit key(sym 9)
+        Sym alg - AES with 192-bit key(sym 8)
+        Sym alg - AES with 128-bit key(sym 7)
+        Sym alg - Triple-DES(sym 2)
+    Hashed Sub: preferred hash algorithms(sub 21)(5 bytes)
+        Hash alg - SHA512(hash 10)
+        Hash alg - SHA384(hash 9)
+        Hash alg - SHA256(hash 8)
+        Hash alg - SHA224(hash 11)
+        Hash alg - SHA1(hash 2)
+    Hashed Sub: preferred compression algorithms(sub 22)(3 bytes)
+        Comp alg - ZLIB <RFC1950>(comp 2)
+        Comp alg - BZip2(comp 3)
+        Comp alg - ZIP <RFC1951>(comp 1)
+    Hashed Sub: features(sub 30)(1 bytes)
+        Flag - Modification detection (packets 18 and 19)
+    Hashed Sub: key server preferences(sub 23)(1 bytes)
+        Flag - No-modify
+    Sub: issuer key ID(sub 16)(8 bytes)
+        Key ID - 0x7FA029CF2039D760
+    Hash left 2 bytes - ab 5a
+    Unknown signature(pub 22)
 
 -----BEGIN PGP PUBLIC KEY BLOCK-----
 
@@ -396,7 +399,14 @@ uid:alice (test key) <alice@example.com>:1403441448::
 pub:3c8f7607ca580f9e:1:2048:1403441743::
 uid:bob (test key) <bob@example.com>:1403441743::'''
 
+
+class MockRequest(object):
+    def __init__(self, user=None):
+        self.user = user
+
+
 class PGPKeyModelTest(TestCase):
+
     def setUp(self):
         self.ALICE = models.PGPKeyModel.objects.save_to_storage(None, GPG_ALICE_KEY)
         self.CAROL = models.PGPKeyModel.objects.save_to_storage(None, GPG_CAROL_KEY)
@@ -404,6 +414,17 @@ class PGPKeyModelTest(TestCase):
     def tearDown(self):
         self.ALICE.delete()
         self.CAROL.delete()
+
+    def test_adminlist(self):
+        self.CLIENT = Client()
+        my_model_admin = PGPKeyModelAdmin(model=models.PGPKeyModel, admin_site=AdminSite())
+        super_user = User.objects.create_superuser(username='super', email='super@email.org', password='pass')
+        self.CLIENT.force_login(user=super_user)
+        my_model_admin.save_model(obj=self.ALICE, request=MockRequest(user=super_user), form=None, change=None)
+
+        resp = self.CLIENT.get(reverse('admin:pgpdb_pgpkeymodel_changelist'))
+        self.assertEqual(resp.context['results'][1][3], '<td class="field-user_ids">&lt;ul&gt;&lt;li&gt;&lt;a href=&quot;../pgpuseridmodel/1/&quot;&gt;alice (test key) &lt;alice@example.com&gt;&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;</td>')
+
 
     def test_save_to_storage(self):
         self.BOB = models.PGPKeyModel.objects.save_to_storage(None, GPG_BOB_KEY)
@@ -593,12 +614,12 @@ class PGPDBViewTest(TestCase):
         self.CLIENT = Client()
 
     def test_index(self):
-        uri = reverse('index')
+        uri = reverse('pgpdb:index')
         resp = self.CLIENT.get(uri)
         self.assertTemplateUsed(resp, 'pgpdb/index.html')
 
     def test_add(self):
-        uri = reverse('add')
+        uri = reverse('pgpdb:add')
 
         data = {
             'keytext': GPG_ALICE_KEY,
@@ -618,7 +639,7 @@ class PGPDBViewTest(TestCase):
         self.assertTemplateUsed(resp, 'pgpdb/add_method_not_allowed.html')
 
     def test_add_multi(self):
-        uri = reverse('add')
+        uri = reverse('pgpdb:add')
 
         self.assertEqual(models.PGPKeyModel.objects.all().count(), 0)
 
@@ -635,7 +656,7 @@ class PGPDBViewTest(TestCase):
         self.assertEqual(last.ascii_armor(), PGPDB_BOB_KEY)
 
     def test_lookup(self):
-        uri = reverse('lookup')
+        uri = reverse('pgpdb:lookup')
 
         data = {
             'op': 'index',
@@ -668,7 +689,7 @@ class PGPDBViewTest(TestCase):
         self.assertTemplateUsed(resp, 'pgpdb/lookup_get.html')
 
     def test_lookup_mr(self):
-        uri = reverse('lookup')
+        uri = reverse('pgpdb:lookup')
 
         data = {
             'op': 'index',
